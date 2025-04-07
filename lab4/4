@@ -1,0 +1,60 @@
+
+Sys.setenv(HADOOP_HOME = "C:/spark/tmp/hadoop")
+
+library(sparklyr)
+library(dplyr)
+library(ggplot2)
+
+# підключення до Spark
+sc <- spark_connect(master = "local")
+# завантаження датасету
+health_data <- spark_read_csv(sc,
+                              name = "health_data",
+                              path = "health_dataset.csv",
+                              header = TRUE,
+                              infer_schema = TRUE)
+
+# 1. середній рівень стресу по статі
+stress_by_gender <- health_data %>%
+  group_by(Gender) %>%
+  summarise(avg_stress = mean(Stress_level, na.rm = TRUE)) %>%
+  collect()
+print("Середній рівень стресу по статі:")
+print(stress_by_gender)
+
+ggplot(stress_by_gender, aes(x = as.factor(Gender), y = avg_stress, fill = as.factor(Gender))) +
+  geom_bar(stat = "identity") +
+  labs(title = "Середній рівень стресу по статі", x = "Стать", y = "Середній рівень стресу") +
+  theme_minimal()
+ggsave("stress_by_gender.png")
+
+# 2. мental_health_state у працевлаштованих і непрацевлаштованих
+mental_health_vs_work <- health_data %>%
+  group_by(working_status) %>%
+  summarise(avg_mental_health = mean(Mental_health_state, na.rm = TRUE)) %>%
+  collect()
+print("Середній стан психічного здоров’я залежно від працевлаштування:")
+print(mental_health_vs_work)
+
+ggplot(mental_health_vs_work, aes(x = as.factor(working_status), y = avg_mental_health, fill = as.factor(working_status))) +
+  geom_bar(stat = "identity") +
+  labs(title = "Mental Health vs Employment", x = "Статус працевлаштування", y = "Середній стан психічного здоров’я") +
+  theme_minimal()
+ggsave("mental_health_vs_work.png")
+
+# 3. cереднє вживання алкоголю по статі
+alcohol_by_gender <- health_data %>%
+  group_by(Gender) %>%
+  summarise(avg_alcohol = mean(weekly_alcohol, na.rm = TRUE)) %>%
+  collect()
+print("Середнє вживання алкоголю по статі:")
+print(alcohol_by_gender)
+
+ggplot(alcohol_by_gender, aes(x = as.factor(Gender), y = avg_alcohol, fill = as.factor(Gender))) +
+  geom_bar(stat = "identity") +
+  labs(title = "Середнє вживання алкоголю за статтю", x = "Стать", y = "Середній рівень алкоголю") +
+  theme_minimal()
+ggsave("alcohol_by_gender.png")
+
+# відключення від Spark
+spark_disconnect(sc)

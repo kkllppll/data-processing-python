@@ -1,0 +1,32 @@
+# підключення бібліотек
+library(dplyr)
+library(ggplot2)
+
+# зчитування CSV-файлу
+df <- read.csv("vgsales.csv")  # або інша назва файлу
+
+# показати перші рядки таблиці
+head(df)
+
+# обчислення загальних глобальних продажів по жанрах
+genre_sales <- df %>%
+  filter(!is.na(Genre)) %>%                            # оптимізація: прибрали пропущені жанри
+  group_by(Genre) %>%                                  # трансформація: згрупували по жанру
+  summarise(total_sales = sum(Global_Sales, na.rm = TRUE)) %>%  # трансформація: підрахували глобальні продажі
+  arrange(desc(total_sales))                           # оптимізація: відсортували для зручності виводу
+
+
+
+# збереження графіка у файл png
+png("genre_sales_plot.png", width = 800, height = 600)
+
+ggplot(genre_sales, aes(x = reorder(Genre, -total_sales), y = total_sales)) +
+  geom_col(fill = "steelblue") +
+  labs(title = "Глобальні продажі відеоігор за жанрами",
+       x = "Жанр", y = "Продажі (млн копій)") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+dev.off()  # завершити запис у файл
+
+

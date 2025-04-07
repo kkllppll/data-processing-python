@@ -1,0 +1,76 @@
+# %%
+
+
+# %%
+import pandas as pd
+
+# завантаження даних
+df = pd.read_csv('Superstore.csv', encoding='latin1')
+df.head()
+
+
+# %%
+df.columns
+
+
+
+# %%
+region_data = df.groupby('Region').agg({
+    'City': pd.Series.nunique,
+    'Sales': 'sum'
+}).reset_index()
+
+region_data.rename(columns={'City': 'Num_Cities', 'Sales': 'Total_Sales'}, inplace=True)
+
+region_data
+
+
+# %%
+from sklearn.linear_model import LinearRegression
+import numpy as np
+
+X = region_data[['Num_Cities']]
+y = region_data['Total_Sales']
+
+model = LinearRegression()
+model.fit(X, y)
+
+region_data['Predicted_Sales'] = model.predict(X)
+
+region_data
+
+
+# %%
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+plt.figure(figsize=(10, 6))
+
+# точки: фактичні дані
+sns.scatterplot(x=region_data['Num_Cities'], y=region_data['Total_Sales'], label='Фактичні продажі')
+
+# лінія: прогнозовані значення
+sns.lineplot(x=region_data['Num_Cities'], y=region_data['Predicted_Sales'], color='red', label='Прогноз')
+
+plt.title('Лінійна регресія: Продажі vs Кількість магазинів у регіоні')
+plt.xlabel('Кількість магазинів (міст) у регіоні')
+plt.ylabel('Загальний обсяг продажів (грн)')
+plt.grid(True)
+plt.legend()
+plt.show()
+
+
+# %%
+from sklearn.metrics import r2_score, mean_squared_error
+
+# R² — коефіцієнт детермінації (наскільки добре модель описує дані)
+r2 = r2_score(region_data['Total_Sales'], region_data['Predicted_Sales'])
+
+# MSE — середньоквадратична помилка
+mse = mean_squared_error(region_data['Total_Sales'], region_data['Predicted_Sales'])
+
+print(f"Коефіцієнт детермінації (R²): {r2:.4f}")
+print(f"Середньоквадратична помилка (MSE): {mse:.2f}")
+
+
+
